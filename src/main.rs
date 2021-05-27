@@ -1,7 +1,12 @@
 use std::env;
 use std::net::{AddrParseError, IpAddr};
 use std::num::ParseIntError;
+use std::process;
 use std::str::FromStr;
+use std::sync::mpsc::{channel, Sender};
+use std::thread;
+
+const MAX: u16 = 65535;
 
 struct Arguments {
     flag: String,
@@ -22,11 +27,10 @@ impl Arguments {
             return Ok(Arguments { flag: String::from(""), ipaddr, threads: 4 });
         } else {
             let flag = f;
-            println!("{}", f);
 
             if flag.contains("-h") || flag.contains("-help") && args.len() == 2 {
                 println!("Usage: -j to select how many threads you want
-                \r\n      -h or -help to show this help message");
+                \r\t -h or -help to show this help message");
                 return Err("help");
             } else if flag.contains("-h") || flag.contains("-help") {
                 return Err("Too many arguments");
@@ -47,18 +51,38 @@ impl Arguments {
     }
 }
 
+fn scan(tx: Sender<u16>, start_port: u16, addr: IpAddr, num_threads: u16) {
+
+}
+
 fn main() {
     let argus: Vec<String> = env::args().collect();
     let program = &argus[0];
+    let arguments = Arguments::new(&argus).unwrap_or_else(
+        |err| {
+            if err.contains("help") {
+                process::exit(0);
+            } else {
+                eprintln!("{} problem parsing arguments: {}", program, err);
+                process::exit((0));
+            }
+        }
+    );
 
-    println!("{:?}", argus);
+    let num_threads = arguments.threads;
+    let (tx, rx) = channel();
+    for i in 0..num_threads {
+        let tx = tx.clone();
+
+        thread::spawn(move || {
+            scan(tx, i, arguments.ipaddr, num_threads);
+        });
+    }
+    println!("{:?}", (num_threads));
 }
-
-// TODO: help screen
-// ip_sniffer.exe -h
 
 // TODO: set number of threads
 // ip_sniffer.exe -j 100 192.168.1.1
 
-// bind an IP address
+// TODO: bind an IP address
 // ip_sniffer.exe 192.168.1.1

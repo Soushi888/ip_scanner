@@ -23,17 +23,17 @@ impl Arguments {
         }
 
         let f = args[1].to_owned();
-        if let Ok(ipaddr) = IpAddr::from_str(&f) {
-            return Ok(Arguments { flag: String::from(""), ipaddr, threads: 4 });
+        return if let Ok(ipaddr) = IpAddr::from_str(&f) {
+            Ok(Arguments { flag: String::from(""), ipaddr, threads: 4 })
         } else {
             let flag = f;
 
             if flag.contains("-h") || flag.contains("-help") && args.len() == 2 {
                 println!("Usage: -j to select how many threads you want
                 \r\t -h or -help to show this help message");
-                return Err("help");
+                Err("help")
             } else if flag.contains("-h") || flag.contains("-help") {
-                return Err("Too many arguments");
+                Err("Too many arguments")
             } else if flag.contains("-j") {
                 let threads = match args[2].parse::<u16>() {
                     Ok(c) => c,
@@ -43,11 +43,11 @@ impl Arguments {
                     Ok(c) => c,
                     Err(_) => return Err("not a valid IPADDR; must be IPv4 or IPv6")
                 };
-                return Ok(Arguments { threads, flag, ipaddr });
+                Ok(Arguments { threads, flag, ipaddr })
             } else {
-                return Err("invalid syntax");
+                Err("invalid syntax")
             }
-        }
+        };
     }
 }
 
@@ -69,6 +69,8 @@ fn main() {
         }
     );
 
+    // TODO: set number of threads
+    // ip_sniffer.exe -j 100 192.168.1.1
     let num_threads = arguments.threads;
     let (tx, rx) = channel();
     for i in 0..num_threads {
@@ -81,8 +83,6 @@ fn main() {
     println!("{:?}", (num_threads));
 }
 
-// TODO: set number of threads
-// ip_sniffer.exe -j 100 192.168.1.1
 
 // TODO: bind an IP address
 // ip_sniffer.exe 192.168.1.1
